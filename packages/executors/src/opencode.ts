@@ -1,6 +1,13 @@
 import { OPENCODE_ZEN_BASE_URL } from "@srouter/constants";
-import type { ModelObject } from "@srouter/types";
+import type {
+    ChatCompletionChunk,
+    ChatCompletionRequest,
+    ChatCompletionResponse,
+    ModelObject
+} from "@srouter/types";
 import { OpenAIExecutor, type OpenAIExecutorOptions } from "./openai.js";
+
+const OPENCODE_ZEN_MAX_TOKENS = 512;
 
 export interface OpenCodeZenModelDefinition {
     id: string;
@@ -18,6 +25,13 @@ export const OPENCODE_ZEN_MODELS: OpenCodeZenModelDefinition[] = [
 export const OPENCODE_ZEN_MODEL_IDS: string[] = OPENCODE_ZEN_MODELS.map((m) => m.id);
 
 export interface OpenCodeZenExecutorOptions extends OpenAIExecutorOptions {}
+
+function clampMaxTokens(req: ChatCompletionRequest): ChatCompletionRequest {
+    if (req.max_tokens && req.max_tokens > OPENCODE_ZEN_MAX_TOKENS) {
+        return { ...req, max_tokens: OPENCODE_ZEN_MAX_TOKENS };
+    }
+    return req;
+}
 
 export class OpenCodeZenExecutor extends OpenAIExecutor {
     constructor(options: OpenCodeZenExecutorOptions = {}) {
@@ -37,5 +51,13 @@ export class OpenCodeZenExecutor extends OpenAIExecutor {
             object: "model",
             owned_by: baseId
         }));
+    }
+
+    override async chatCompletion(req: ChatCompletionRequest): Promise<ChatCompletionResponse> {
+        return super.chatCompletion(clampMaxTokens(req));
+    }
+
+    override async *chatCompletionStream(req: ChatCompletionRequest): AsyncGenerator<ChatCompletionChunk, void, void> {
+        yield* super.chatCompletionStream(clampMaxTokens(req));
     }
 }

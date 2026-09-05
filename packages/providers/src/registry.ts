@@ -14,6 +14,15 @@ import type {
 } from "@srouter/types";
 import { CircuitBreaker, circuitBreaker as defaultCircuitBreaker } from "./circuitBreaker.js";
 
+const DEFAULT_MAX_TOKENS_CAP = 4096;
+
+function clampMaxTokens(req: ChatCompletionRequest): ChatCompletionRequest {
+    if (req.max_tokens && req.max_tokens > DEFAULT_MAX_TOKENS_CAP) {
+        return { ...req, max_tokens: DEFAULT_MAX_TOKENS_CAP };
+    }
+    return req;
+}
+
 export function getProviderAlias(providerId: string): string {
     return providerAlias(providerBaseId(providerId));
 }
@@ -472,13 +481,14 @@ export class ProviderRegistry {
     }
 
     async chatCompletion(req: ChatCompletionRequest): Promise<ChatCompletionResponse> {
-        const candidates = await this.getCandidateProvidersForModel(req.model);
+        const clampedReq = clampMaxTokens(req);
+        const candidates = await this.getCandidateProvidersForModel(clampedReq.model);
         let lastError: unknown = null;
 
         for (let i = 0; i < candidates.length; i++) {
             const candidate = candidates[i]!;
             try {
-                const response = await candidate.chatCompletion(req);
+                const response = await candidate.chatCompletion(clampedReq);
                 this.circuitBreaker.recordSuccess(candidate.id);
                 return response;
             } catch (err) {
@@ -496,14 +506,15 @@ export class ProviderRegistry {
     async *chatCompletionStream(
         req: ChatCompletionRequest
     ): AsyncGenerator<ChatCompletionChunk, void, void> {
-        const candidates = await this.getCandidateProvidersForModel(req.model);
+        const clampedReq = clampMaxTokens(req);
+        const candidates = await this.getCandidateProvidersForModel(clampedReq.model);
         let lastError: unknown = null;
 
         for (let i = 0; i < candidates.length; i++) {
             const candidate = candidates[i]!;
             let yieldedAny = false;
             try {
-                const stream = candidate.chatCompletionStream(req);
+                const stream = candidate.chatCompletionStream(clampedReq);
                 for await (const chunk of stream) {
                     if (!yieldedAny) {
                         yieldedAny = true;
