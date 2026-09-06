@@ -5,27 +5,27 @@
     "private": true,
     "repository": {
         "type": "git",
-        "url": "https://github.com/seaavey/SRouter.git",
+        "url": "https://github.com/zelapii/Zrouter.git",
         "directory": "apps/web"
     },
-    "homepage": "https://github.com/seaavey/SRouter#readme",
+    "homepage": "https://github.com/zelapii/Zrouter#readme",
     "bugs": {
-        "url": "https://github.com/seaavey/SRouter/issues"
+        "url": "https://github.com/zelapii/Zrouter/issues"
     },
     "license": "MIT",
     "scripts": {
         "dev": "vite",
-        "build": "tsc -b && vite build",
+        "build": "vite build",
         "preview": "vite preview",
         "lint": "tsc --noEmit",
-        "clean": "rm -rf dist .turbo"
+        "clean": "rm -rf dist"
     },
     "dependencies": {
         "@base-ui/react": "^1.7.0",
         "@fontsource-variable/plus-jakarta-sans": "^5.3.0",
         "@fontsource/jetbrains-mono": "^5.3.0",
-        "@srouter/constants": "workspace:*",
-        "@srouter/types": "workspace:*",
+        "@srouter/constants": "*",
+        "@srouter/types": "*",
         "@tanstack/react-query": "^5.76.0",
         "@tanstack/react-router": "^1.114.0",
         "@tanstack/react-table": "^8.21.3",
@@ -50,7 +50,10 @@
         "@types/react-dom": "^19.1.0",
         "@vitejs/plugin-react": "^4.5.0",
         "tailwindcss": "^4.1.0",
-        "typescript": "^5.0.0",
+        "typescript": "^5.8.3",
         "vite": "^6.3.5"
+    },
+    "optionalDependencies": {
+        "@rollup/rollup-linux-x64-gnu": "^4.63.1"
     }
 }

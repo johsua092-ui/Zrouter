@@ -121,7 +121,11 @@ export function resolvePricingDataPath(customPath?: string): string {
         path.resolve(process.cwd(), "packages/pricing/data/pricing.jsonc"),
         path.resolve(process.cwd(), "packages/pricing/data/pricing.json"),
         path.resolve(process.cwd(), "data/pricing.jsonc"),
-        path.resolve(process.cwd(), "data/pricing.json")
+        path.resolve(process.cwd(), "data/pricing.json"),
+        path.resolve(currentDir, "../../../packages/pricing/data/pricing.jsonc"),
+        path.resolve(currentDir, "../../../packages/pricing/data/pricing.json"),
+        path.resolve(currentDir, "../../../../packages/pricing/data/pricing.jsonc"),
+        path.resolve(currentDir, "../../../../packages/pricing/data/pricing.json")
     ];
 
     for (const candidate of candidates) {
@@ -175,7 +179,11 @@ export function resolveModelsDevDataPath(customPath?: string): string {
         path.resolve(process.cwd(), "packages/pricing/models.jsonc"),
         path.resolve(process.cwd(), "packages/pricing/models.json"),
         path.resolve(process.cwd(), "models.jsonc"),
-        path.resolve(process.cwd(), "models.json")
+        path.resolve(process.cwd(), "models.json"),
+        path.resolve(currentDir, "../../../packages/pricing/models.jsonc"),
+        path.resolve(currentDir, "../../../packages/pricing/models.json"),
+        path.resolve(currentDir, "../../../../packages/pricing/models.jsonc"),
+        path.resolve(currentDir, "../../../../packages/pricing/models.json")
     ];
 
     for (const candidate of candidates) {

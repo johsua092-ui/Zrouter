@@ -8,8 +8,7 @@ import {
     HardDrive,
     AlertTriangle,
     FileJson,
-    Check,
-    Loader2
+    Check
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -26,7 +25,6 @@ import type { StorageStats } from "@/hooks/useSettings";
 interface DataSettingsProps {
     exportSettings: () => void;
     importSettings: (json: string) => boolean;
-    clearPlaygroundHistory: () => void;
     resetToDefaults: () => void;
     getStorageStats: () => StorageStats;
 }
@@ -42,20 +40,17 @@ function formatBytes(bytes: number): string {
 export function DataSettings({
     exportSettings,
     importSettings,
-    clearPlaygroundHistory,
     resetToDefaults,
     getStorageStats
 }: DataSettingsProps) {
     const [stats, setStats] = useState<StorageStats>({
         totalBytes: 0,
         itemsCount: 0,
-        playgroundBytes: 0,
         settingsBytes: 0
     });
 
     const [isImportOpen, setIsImportOpen] = useState(false);
     const [importText, setImportText] = useState("");
-    const [isClearOpen, setIsClearOpen] = useState(false);
     const [isResetOpen, setIsResetOpen] = useState(false);
     const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -95,12 +90,6 @@ export function DataSettings({
         }
     };
 
-    const handleConfirmClear = () => {
-        clearPlaygroundHistory();
-        setIsClearOpen(false);
-        refreshStats();
-    };
-
     const handleConfirmReset = () => {
         resetToDefaults();
         setIsResetOpen(false);
@@ -136,16 +125,8 @@ export function DataSettings({
                     </span>
                 </div>
 
-                {/* Storage breakdown bar */}
                 <div className="space-y-1.5">
                     <div className="h-2 w-full rounded-full bg-muted overflow-hidden flex">
-                        <div
-                            className="h-full bg-blue-500 transition-all duration-300"
-                            style={{
-                                width: `${stats.totalBytes > 0 ? (stats.playgroundBytes / stats.totalBytes) * 100 : 0}%`
-                            }}
-                            title={`Playground: ${formatBytes(stats.playgroundBytes)}`}
-                        />
                         <div
                             className="h-full bg-amber-500 transition-all duration-300"
                             style={{
@@ -157,12 +138,6 @@ export function DataSettings({
                     <div className="flex items-center justify-between text-[10px] font-mono text-muted-foreground">
                         <div className="flex items-center gap-3">
                             <span className="flex items-center gap-1">
-                                <span className="size-2 rounded-full bg-blue-500" />
-                                <span>
-                                    Playground Sessions: {formatBytes(stats.playgroundBytes)}
-                                </span>
-                            </span>
-                            <span className="flex items-center gap-1">
                                 <span className="size-2 rounded-full bg-amber-500" />
                                 <span>Preferences: {formatBytes(stats.settingsBytes)}</span>
                             </span>
@@ -173,7 +148,6 @@ export function DataSettings({
 
             {/* Action Cards */}
             <div className="space-y-3">
-                {/* Export & Import Row */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div className="flex flex-col justify-between p-4 rounded-xl border border-border/80 bg-background space-y-3">
                         <div className="space-y-1">
@@ -205,7 +179,7 @@ export function DataSettings({
                                 <span>Import Configuration</span>
                             </div>
                             <p className="text-[11px] text-muted-foreground">
-                                Restore preferences from a previously saved SRouter settings JSON
+                                Restore preferences from a previously saved ZelAI settings JSON
                                 file.
                             </p>
                         </div>
@@ -222,31 +196,7 @@ export function DataSettings({
                     </div>
                 </div>
 
-                {/* Clear & Reset Row */}
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
-                    <div className="flex flex-col justify-between p-4 rounded-xl border border-border/80 bg-background space-y-3">
-                        <div className="space-y-1">
-                            <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
-                                <Trash2 className="size-3.5 text-rose-500" />
-                                <span>Clear Playground History</span>
-                            </div>
-                            <p className="text-[11px] text-muted-foreground">
-                                Delete all cached chat threads and conversations from browser
-                                memory.
-                            </p>
-                        </div>
-                        <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            onClick={() => setIsClearOpen(true)}
-                            className="w-full font-semibold cursor-pointer"
-                        >
-                            <Trash2 className="size-3.5" />
-                            <span>Clear Playground Sessions</span>
-                        </Button>
-                    </div>
-
                     <div className="flex flex-col justify-between p-4 rounded-xl border border-border/80 bg-background space-y-3">
                         <div className="space-y-1">
                             <div className="text-xs font-bold text-foreground flex items-center gap-1.5">
@@ -337,40 +287,6 @@ export function DataSettings({
                 </DialogContent>
             </Dialog>
 
-            {/* Modal: Confirm Clear History */}
-            <Dialog open={isClearOpen} onOpenChange={setIsClearOpen}>
-                <DialogContent className="max-w-md">
-                    <DialogHeader>
-                        <DialogTitle className="flex items-center gap-2 text-sm font-bold text-rose-500">
-                            <Trash2 className="size-4" />
-                            <span>Clear Playground Chat History?</span>
-                        </DialogTitle>
-                        <DialogDescription className="text-xs">
-                            This will permanently delete all cached conversations from this browser.
-                            This action cannot be undone.
-                        </DialogDescription>
-                    </DialogHeader>
-                    <DialogFooter className="gap-2 sm:gap-0 pt-3">
-                        <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setIsClearOpen(false)}
-                        >
-                            Cancel
-                        </Button>
-                        <Button
-                            type="button"
-                            variant="destructive"
-                            size="sm"
-                            onClick={handleConfirmClear}
-                        >
-                            Yes, Clear All History
-                        </Button>
-                    </DialogFooter>
-                </DialogContent>
-            </Dialog>
-
             {/* Modal: Confirm Reset Defaults */}
             <Dialog open={isResetOpen} onOpenChange={setIsResetOpen}>
                 <DialogContent className="max-w-md">
@@ -380,8 +296,8 @@ export function DataSettings({
                             <span>Reset Settings to Defaults?</span>
                         </DialogTitle>
                         <DialogDescription className="text-xs">
-                            All custom timeout limits, retry backoffs, and playground parameters
-                            will be reset to default factory values.
+                            All custom timeout limits and retry backoffs will be reset to default
+                            factory values.
                         </DialogDescription>
                     </DialogHeader>
                     <DialogFooter className="gap-2 sm:gap-0 pt-3">

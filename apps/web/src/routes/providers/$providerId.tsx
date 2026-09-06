@@ -3,6 +3,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import {
     AlertTriangle,
     ArrowLeft,
+    Download,
     ExternalLink,
     LayoutGrid,
     List,
@@ -22,6 +23,7 @@ import { toast } from "sonner";
 import { ConnectionCard } from "@/components/providers/ConnectionCard";
 import { ConnectionForm, type ConnectionFormInput } from "@/components/providers/ConnectionForm";
 import { AddModelDialog } from "@/components/providers/AddModelDialog";
+import { ImportModelsDialog } from "@/components/providers/ImportModelsDialog";
 import { ProviderModelCard } from "@/components/providers/ProviderModelCard";
 import { ProviderModelTable } from "@/components/providers/ProviderModelTable";
 import { ProviderDetailSkeleton } from "@/components/skeletons";
@@ -42,7 +44,9 @@ function ProviderDetailPage() {
         addMutation,
         deleteMutation,
         addModelMutation,
-        deleteModelMutation
+        deleteModelMutation,
+        fetchModelsQuery,
+        importModelsMutation
     } = useProvider(providerId);
 
     const [modelSearch, setModelSearch] = useState("");
@@ -51,6 +55,7 @@ function ProviderDetailPage() {
     const [isAddOpen, setIsAddOpen] = useState(false);
     const [isOAuthModalOpen, setIsOAuthModalOpen] = useState(false);
     const [isAddModelOpen, setIsAddModelOpen] = useState(false);
+    const [isImportModelOpen, setIsImportModelOpen] = useState(false);
     const [formError, setFormError] = useState("");
     const { copied, copy } = useCopy();
     const { isFavorite } = useFavorites();
@@ -295,6 +300,15 @@ function ProviderDetailPage() {
                     <Button
                         type="button"
                         variant="outline"
+                        onClick={() => setIsImportModelOpen(true)}
+                        className="h-8 text-xs font-semibold cursor-pointer shadow-xs gap-1.5"
+                    >
+                        <Download className="size-3.5" />
+                        <span>Import</span>
+                    </Button>
+                    <Button
+                        type="button"
+                        variant="outline"
                         onClick={() => setIsAddModelOpen(true)}
                         className="h-8 text-xs font-semibold cursor-pointer shadow-xs gap-1.5"
                     >
@@ -317,7 +331,7 @@ function ProviderDetailPage() {
                 <div className="flex items-start gap-3 rounded-xl border border-amber-500/30 bg-amber-500/10 p-3.5 text-xs leading-relaxed text-amber-600 dark:text-amber-400">
                     <AlertTriangle className="size-4 shrink-0 mt-0.5 text-amber-500" />
                     <div>
-                        <strong>OAuth Refresh Notice:</strong> SRouter manages token lifecycle and
+                        <strong>OAuth Refresh Notice:</strong> ZelAI manages token lifecycle and
                         background refresh sweeper automatically for this provider account.
                     </div>
                 </div>
@@ -493,6 +507,19 @@ function ProviderDetailPage() {
                         }
                     })
                 }
+            />
+
+            {/* Import Models Dialog */}
+            <ImportModelsDialog
+                open={isImportModelOpen}
+                onOpenChange={setIsImportModelOpen}
+                providerName={provider.name}
+                providerId={providerId}
+                existingModels={fetchModelsQuery.data?.data ?? []}
+                isFetching={fetchModelsQuery.isFetching}
+                isImporting={importModelsMutation.isPending}
+                onFetchModels={() => void fetchModelsQuery.refetch()}
+                onImport={(models) => importModelsMutation.mutate(models, { onSuccess: () => setIsImportModelOpen(false) })}
             />
         </div>
     );

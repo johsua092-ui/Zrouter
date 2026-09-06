@@ -4,11 +4,11 @@ import path from "node:path";
 function findRepoRoot(cwd: string): string {
     let current = path.resolve(cwd);
     while (true) {
-        if (
-            fs.existsSync(path.join(current, "pnpm-workspace.yaml")) ||
-            fs.existsSync(path.join(current, "turbo.json"))
-        ) {
-            return current;
+        if (fs.existsSync(path.join(current, "package.json"))) {
+            const pkg = JSON.parse(
+                fs.readFileSync(path.join(current, "package.json"), "utf-8")
+            );
+            if (pkg.workspaces) return current;
         }
         const parent = path.dirname(current);
         if (parent === current) break;

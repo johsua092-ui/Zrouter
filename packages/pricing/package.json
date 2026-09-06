@@ -4,12 +4,12 @@
     "type": "module",
     "repository": {
         "type": "git",
-        "url": "https://github.com/seaavey/SRouter.git",
+        "url": "https://github.com/zelapii/Zrouter.git",
         "directory": "packages/pricing"
     },
-    "homepage": "https://github.com/seaavey/SRouter#readme",
+    "homepage": "https://github.com/zelapii/Zrouter#readme",
     "bugs": {
-        "url": "https://github.com/seaavey/SRouter/issues"
+        "url": "https://github.com/zelapii/Zrouter/issues"
     },
     "license": "MIT",
     "main": "dist/index.js",
@@ -27,11 +27,11 @@
         "update": "tsx scripts/update.ts"
     },
     "dependencies": {
-        "@srouter/types": "workspace:*"
+        "@srouter/types": "*"
     },
     "devDependencies": {
         "@types/node": "^26.4.0",
         "tsx": "^4.23.13",
-        "typescript": "^5.9.3"
+        "typescript": "^5.8.3"
     }
 }

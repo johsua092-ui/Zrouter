@@ -25,3 +25,15 @@ ProvidersRouter.delete(
     RequireAdmin,
     ProvidersController.DeleteCustomModel
 );
+
+// Bulk import: fetch available models from provider + bulk add as custom
+ProvidersRouter.get(
+    "/providers/:providerId/models/fetch",
+    RequireAdmin,
+    ProvidersController.FetchProviderModels
+);
+ProvidersRouter.post(
+    "/providers/:providerId/models/import",
+    RequireAdmin,
+    ProvidersController.ImportModels
+);

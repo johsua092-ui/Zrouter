@@ -2,7 +2,7 @@ import type { Context } from "hono";
 import type { CreateProviderPayload } from "@/logic/providers.logic.js";
 import { ProvidersLogic } from "@/logic/providers.logic.js";
 import { deleteProviderDB } from "@srouter/db";
-import { AddCustomModelSchema, CreateProviderSchema, VerifyProviderSchema } from "@srouter/types";
+import { AddCustomModelSchema, CreateProviderSchema, ImportModelsFromProviderSchema, VerifyProviderSchema } from "@srouter/types";
 import { loadSavedProvidersFromDB, registry } from "@/services/registry.js";
 import { Err, Ok } from "@/utils/response.js";
 
@@ -97,6 +97,41 @@ export class ProvidersController {
             return Ok(c, { message: "Custom model deleted" });
         } catch (error) {
             return Err(c, error instanceof Error ? error.message : "Failed to delete model", 404);
+        }
+    }
+
+    public static async ImportModels(c: Context): Promise<Response> {
+        const ProviderId = c.req.param("providerId");
+        if (!ProviderId) return Err(c, "Provider ID is required", 400);
+
+        const RawBody = await c.req.json().catch(() => null);
+        const Parsed = ImportModelsFromProviderSchema.safeParse(RawBody);
+        if (!Parsed.success) {
+            return Err(c, Parsed.error.issues[0]?.message || "Invalid import payload", 400);
+        }
+
+        try {
+            const Result = ProvidersLogic.ImportModels(ProviderId, Parsed.data.models);
+            return Ok(c, {
+                imported: Result.imported.length,
+                skipped: Result.skipped.length,
+                models: Result.imported,
+                skipped_ids: Result.skipped
+            });
+        } catch (error) {
+            return Err(c, error instanceof Error ? error.message : "Import failed", 400);
+        }
+    }
+
+    public static async FetchProviderModels(c: Context): Promise<Response> {
+        const ProviderId = c.req.param("providerId");
+        if (!ProviderId) return Err(c, "Provider ID is required", 400);
+
+        try {
+            const Models = await ProvidersLogic.FetchProviderModels(ProviderId);
+            return Ok(c, { object: "list", data: Models });
+        } catch (error) {
+            return Err(c, error instanceof Error ? error.message : "Failed to fetch models", 400);
         }
     }
 }

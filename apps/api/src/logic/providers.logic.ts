@@ -324,6 +324,86 @@ export class ProvidersLogic {
         }));
     }
 
+    public static ImportModels(ProviderId: string, ModelIds: string[]): {
+        imported: ModelObject[];
+        skipped: string[];
+    } {
+        const Id = ProviderId.toLowerCase();
+        if (
+            !DEFAULT_PROVIDER_MAP[Id] &&
+            !getAllProvidersDB().some((P) => BaseIdOf(P.providerId || P.id) === Id)
+        ) {
+            throw new Error(`Provider '${ProviderId}' not found`);
+        }
+
+        const Alias = providerAlias(Id);
+        const imported: ModelObject[] = [];
+        const skipped: string[] = [];
+
+        for (const raw of ModelIds) {
+            const Trimmed = raw.trim();
+            if (!Trimmed) {
+                skipped.push(raw);
+                continue;
+            }
+            if (Trimmed.length > 200 || !/^[A-Za-z0-9._\-/: ]+$/.test(Trimmed)) {
+                skipped.push(raw);
+                continue;
+            }
+
+            addCustomModelDB(Id, Trimmed);
+            imported.push({
+                id: `${Alias}/${Trimmed}`,
+                object: "model",
+                owned_by: Alias,
+                custom: true
+            });
+        }
+
+        if (imported.length > 0) {
+            registry.clearModelsCache();
+        }
+
+        return { imported, skipped };
+    }
+
+    public static async FetchProviderModels(ProviderId: string): Promise<ModelObject[]> {
+        const MatchingProviders = Array.from(registry.getAllProviders().values()).filter(
+            (P) =>
+                P.id === ProviderId ||
+                P.id.startsWith(`${ProviderId}_`) ||
+                P.id.startsWith(`${ProviderId}-`)
+        );
+
+        if (MatchingProviders.length === 0) {
+            throw new Error(
+                `No active connection found for provider '${ProviderId}'. Add an API key or connect an account first.`
+            );
+        }
+
+        const allModels: ModelObject[] = [];
+        for (const P of MatchingProviders) {
+            try {
+                const models = await registry.getProviderModels(P, true);
+                allModels.push(...models);
+            } catch {
+                // skip providers that fail
+            }
+        }
+
+        const deduped = new Map<string, ModelObject>();
+        for (const m of allModels) {
+            const bare = m.id.includes("/") ? m.id.split("/").slice(1).join("/") : m.id;
+            deduped.set(bare.toLowerCase(), {
+                id: bare,
+                object: "model",
+                owned_by: providerAlias(ProviderId.toLowerCase())
+            });
+        }
+
+        return Array.from(deduped.values());
+    }
+
     public static async VerifyConnection(Payload: VerifyProviderZod): Promise<{
         success: boolean;
         message: string;
@@ -371,7 +451,7 @@ export class ProvidersLogic {
                 const Res = await fetch(TargetUrl, {
                     method: "GET",
                     headers: Headers,
-                    redirect: "manual",
+                    redirect: "follow",
                     signal: AbortSignal.timeout(8000)
                 });
 
@@ -414,6 +494,43 @@ export class ProvidersLogic {
             let TargetUrl: string;
             if (!BaseUrl) {
                 TargetUrl = "https://api.openai.com/v1/models";
+            } else if (BaseUrl.includes("deepseek.com")) {
+                // DeepSeek web API: verify token by creating a session
+                const VerifyRes = await fetch("https://chat.deepseek.com/api/v0/chat_session/create", {
+                    method: "POST",
+                    headers: {
+                        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/148.0.0.0 Safari/537.36",
+                        Accept: "application/json",
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${ApiKey}`,
+                        Origin: "https://chat.deepseek.com",
+                        Referer: "https://chat.deepseek.com/"
+                    },
+                    body: "{}",
+                    redirect: "follow",
+                    signal: AbortSignal.timeout(8000)
+                });
+
+                if (VerifyRes.ok) {
+                    return {
+                        success: true,
+                        message: "DeepSeek token valid! (5 model tersedia)",
+                        modelsCount: 5
+                    };
+                }
+
+                if (VerifyRes.status === 401) {
+                    return {
+                        success: false,
+                        message: "Autentikasi gagal: DeepSeek token salah atau kedaluwarsa (HTTP 401)."
+                    };
+                }
+
+                const ErrBody = await VerifyRes.text().catch(() => "");
+                return {
+                    success: false,
+                    message: `DeepSeek error (HTTP ${VerifyRes.status}): ${ErrBody.slice(0, 100)}`
+                };
             } else if (BaseUrl.endsWith("/models")) {
                 TargetUrl = BaseUrl;
             } else {
@@ -432,7 +549,7 @@ export class ProvidersLogic {
             const Res = await fetch(TargetUrl, {
                 method: "GET",
                 headers: Headers,
-                redirect: "manual",
+                redirect: "follow",
                 signal: AbortSignal.timeout(8000)
             });
 

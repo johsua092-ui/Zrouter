@@ -2,7 +2,8 @@ import type {
     ChatMessage,
     ChatCompletionRequest,
     TokenSaverSettings,
-    TokenSaverPreviewResponse
+    TokenSaverPreviewResponse,
+    TrimMessagesSettings
 } from "@srouter/types";
 
 const ANSI_REGEX = /\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])/g;
@@ -335,11 +336,117 @@ export interface AppliedTokenSaverResult {
     optimizedInputTokens: number;
     tokensSaved: number;
     percentageSaved: number;
+    maxInputTokens: number;
+}
+
+const TRIMMED_PLACEHOLDER = "[trimmed: tool output omitted to fit context window]";
+
+function MessageContentLength(msg: ChatMessage): number {
+    if (typeof msg.content === "string") return msg.content.length;
+    if (Array.isArray(msg.content)) {
+        let total = 0;
+        for (const part of msg.content) {
+            if (typeof part.text === "string") {
+                total += part.text.length;
+            }
+        }
+        return total;
+    }
+    return 0;
+}
+
+export interface TrimResult {
+    messages: ChatMessage[];
+    originalTokens: number;
+    trimmedTokens: number;
+    trimmedCount: number;
+}
+
+/**
+ * Drop oldest `tool` messages until total estimated tokens fit under `maxInputTokens`.
+ * Preserves the system message (index 0 when present) and the last `preserveTailMessages`
+ * non-system messages. Replaced tool messages become a short placeholder so tool_call_id
+ * pairing in OpenAI format stays intact.
+ */
+export function TrimMessages(messages: ChatMessage[], settings: TrimMessagesSettings): TrimResult {
+    if (!settings.enabled || messages.length === 0) {
+        const tokens = messages.reduce((acc, m) => acc + EstimateTokens(MessageContentText(m)), 0);
+        return { messages, originalTokens: tokens, trimmedTokens: tokens, trimmedCount: 0 };
+    }
+
+    const totalChars = messages.reduce((acc, m) => acc + MessageContentLength(m), 0);
+    const originalTokens = Math.max(1, Math.ceil(totalChars / 4));
+
+    if (originalTokens <= settings.maxInputTokens) {
+        return {
+            messages,
+            originalTokens,
+            trimmedTokens: originalTokens,
+            trimmedCount: 0
+        };
+    }
+
+    const preserveTail = Math.max(1, settings.preserveTailMessages);
+    const tailStart = Math.max(0, messages.length - preserveTail);
+
+    const indices = messages.map((_, i) => i);
+    const toolIndices = indices
+        .filter((i) => i < tailStart && messages[i]?.role === "tool")
+        .sort((a, b) => a - b);
+
+    const trimmed = messages.map((m) => ({ ...m }));
+    let trimmedCount = 0;
+
+    for (const i of toolIndices) {
+        const currentChars = trimmed.reduce((acc, m) => acc + MessageContentLength(m), 0);
+        const currentTokens = Math.max(1, Math.ceil(currentChars / 4));
+        if (currentTokens <= settings.maxInputTokens) break;
+
+        const original = messages[i];
+        if (!original) continue;
+        trimmed[i] = {
+            ...original,
+            content: TRIMMED_PLACEHOLDER
+        };
+        trimmedCount++;
+    }
+
+    const trimmedChars = trimmed.reduce((acc, m) => acc + MessageContentLength(m), 0);
+    const trimmedTokens = Math.max(1, Math.ceil(trimmedChars / 4));
+
+    return { messages: trimmed, originalTokens, trimmedTokens, trimmedCount };
+}
+
+function MessageContentText(msg: ChatMessage): string {
+    if (typeof msg.content === "string") return msg.content;
+    if (Array.isArray(msg.content)) {
+        const parts: string[] = [];
+        for (const part of msg.content) {
+            if (typeof part.text === "string") {
+                parts.push(part.text);
+            }
+        }
+        return parts.join("");
+    }
+    return "";
+}
+
+function TrimTextContent(text: string, maxTokens: number): string {
+    if (EstimateTokens(text) <= maxTokens) {
+        return text;
+    }
+
+    let trimmedText = text;
+    while (EstimateTokens(trimmedText) > maxTokens && trimmedText.length > 0) {
+        trimmedText = trimmedText.slice(0, -1);
+    }
+    return trimmedText;
 }
 
 export function ApplyTokenSaver(
     request: ChatCompletionRequest,
-    settings: TokenSaverSettings
+    settings: TokenSaverSettings,
+    maxInputTokens: number
 ): AppliedTokenSaverResult {
     if (!settings.enabled) {
         const tokens = request.messages.reduce((acc, m) => {
@@ -351,7 +458,8 @@ export function ApplyTokenSaver(
             originalInputTokens: tokens,
             optimizedInputTokens: tokens,
             tokensSaved: 0,
-            percentageSaved: 0
+            percentageSaved: 0,
+            maxInputTokens
         };
     }
 
@@ -382,6 +490,7 @@ export function ApplyTokenSaver(
     });
 
     const prompt_enhancement = BuildSystemPromptEnhancements(settings);
+    let system_msg_was_added_by_tokensaver = false;
     if (prompt_enhancement) {
         const system_msg_index = optimized_messages.findIndex((m) => m.role === "system");
         if (system_msg_index >= 0) {
@@ -396,6 +505,50 @@ export function ApplyTokenSaver(
                 role: "system",
                 content: prompt_enhancement
             });
+            system_msg_was_added_by_tokensaver = true; // Set flag jika system message baru ditambahkan
+        }
+    }
+
+    let currentTotalTokens = optimized_messages.reduce(
+        (acc, m) => acc + EstimateTokens(MessageContentText(m)),
+        0
+    );
+
+    // Truncate user and existing system messages if total tokens exceed maxInputTokens
+    if (currentTotalTokens > maxInputTokens) {
+        for (let i = 0; i < optimized_messages.length; i++) {
+            const message = optimized_messages[i]!;
+
+            // Skip if it's a system message added by TokenSaver or a tool message
+            if (
+                (message.role === "system" && system_msg_was_added_by_tokensaver && i === 0) ||
+                message.role === "tool"
+            ) {
+                continue;
+            }
+
+            if (typeof message.content === "string") {
+                const remainingTokens = maxInputTokens - (currentTotalTokens - EstimateTokens(message.content));
+                if (remainingTokens <= 0) { // If we still need to reduce more, just clear the content
+                    message.content = TRIMMED_PLACEHOLDER;
+                } else {
+                    const trimmedContent = TrimTextContent(message.content, remainingTokens);
+                    message.content = trimmedContent;
+                }
+                currentTotalTokens = optimized_messages.reduce(
+                    (acc, m) => acc + EstimateTokens(MessageContentText(m)),
+                    0
+                );
+                if (currentTotalTokens <= maxInputTokens) break;
+            }
+        }
+    }
+
+    if (settings.trimMessages.enabled) {
+        const trimResult = TrimMessages(optimized_messages, settings.trimMessages);
+        optimized_messages.splice(0, optimized_messages.length, ...trimResult.messages);
+        if (trimResult.trimmedCount > 0) {
+            optimized_total_length = trimResult.trimmedTokens * 4;
         }
     }
 
@@ -415,7 +568,8 @@ export function ApplyTokenSaver(
         originalInputTokens: original_input_tokens,
         optimizedInputTokens: optimized_input_tokens,
         tokensSaved: tokens_saved,
-        percentageSaved: percentage_saved
+        percentageSaved: percentage_saved,
+        maxInputTokens
     };
 }
 
@@ -465,4 +619,5 @@ export const compressGenericLogs = CompressGenericLogs;
 export const compressSingleToolOutput = CompressSingleToolOutput;
 export const buildSystemPromptEnhancements = BuildSystemPromptEnhancements;
 export const estimateTokens = EstimateTokens;
+export const trimMessages = TrimMessages;
 export const applyTokenSaver = ApplyTokenSaver;

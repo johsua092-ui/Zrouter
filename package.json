@@ -5,9 +5,10 @@
     "author": "Muhammad Adriansyah",
     "license": "MIT",
     "type": "module",
+    "private": true,
     "repository": {
         "type": "git",
-        "url": "https://github.com/seaavey/SRouter.git"
+        "url": "https://github.com/zelapii/Zrouter.git"
     },
     "keywords": [
         "ai-gateway",
@@ -22,31 +23,36 @@
         "chatgpt",
         "router"
     ],
-    "homepage": "https://github.com/seaavey/SRouter#readme",
+    "homepage": "https://github.com/zelapii/Zrouter#readme",
     "bugs": {
-        "url": "https://github.com/seaavey/SRouter/issues"
+        "url": "https://github.com/zelapii/Zrouter/issues"
     },
+    "workspaces": [
+        "apps/*",
+        "packages/*"
+    ],
     "scripts": {
-        "dev": "turbo dev",
-        "start": "turbo start",
-        "build": "turbo build",
-        "clean": "turbo clean || rm -rf apps/*/dist packages/*/dist .turbo",
+        "dev": "concurrently -n api,web -c blue,green \"npm run dev:api\" \"npm run dev:web\"",
+        "dev:api": "npm run dev -w apps/api",
+        "dev:web": "npm run dev -w apps/web",
+        "start": "npm run start -w apps/api",
+        "build": "npm run build -w packages/types && npm run build -w packages/pricing && npm run build -w packages/constants && npm run build -w packages/translator && npm run build -w packages/db && npm run build -w packages/executors && npm run build -w packages/providers && npm run build -w apps/web && npm run build -w apps/api",
+        "build:api": "npm run build -w apps/api",
+        "build:web": "npm run build -w apps/web",
+        "clean": "rm -rf apps/*/dist packages/*/dist",
         "format": "prettier --write .",
-        "format:check": "prettier --check .",
-        "lint": "turbo lint",
-        "test": "turbo test",
-        "srouter": "pnpm --filter @srouter/cli exec tsx src/index.ts"
+        "format:check": "prettier --check ."
     },
     "engines": {
         "node": ">=22.0.0"
     },
-    "packageManager": "pnpm@11.23.0+sha512.f00082e5b283a199b74e079da28d155c008fe232f44c8a06ea7ddfa014ecf719fc362f790ecc67b28106ddac2afb24c49a9a079159da560b2ce7d1e98efd11af",
     "dependencies": {
-        "@xyflow/system": "^0.0.80",
-        "turbo": "^2.10.9"
+        "@xyflow/system": "^0.0.80"
     },
     "devDependencies": {
+        "concurrently": "^9.1.2",
+        "csstype": "^3.1.0",
         "prettier": "^3.5.0",
-        "typescript": "^5.0.0"
+        "typescript": "^5.8.3"
     }
 }

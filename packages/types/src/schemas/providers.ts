@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const ProviderCategorySchema = z.enum(["oauth", "free_tier", "api_key", "custom_provider"]);
+export const ProviderCategorySchema = z.enum(["oauth", "free_tier", "api_key", "custom_provider", "self_hosted"]);
 export const ProviderProtocolSchema = z.enum(["openai", "anthropic", "gemini", "custom"]);
 
 export const CreateProviderSchema = z.object({
@@ -36,3 +36,12 @@ export const AddCustomModelSchema = z.object({
 });
 
 export type AddCustomModelZod = z.infer<typeof AddCustomModelSchema>;
+
+export const ImportModelsFromProviderSchema = z.object({
+    models: z
+        .array(z.string().min(1))
+        .min(1, "At least one model ID is required")
+        .max(500, "Cannot import more than 500 models at once")
+});
+
+export type ImportModelsFromProviderZod = z.infer<typeof ImportModelsFromProviderSchema>;

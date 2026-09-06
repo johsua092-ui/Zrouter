@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import { test } from "node:test";
-import type { ChatCompletionRequest, TokenSaverSettings } from "@srouter/types";
+import type { ChatCompletionRequest, ChatMessage, TokenSaverSettings } from "@srouter/types";
 import {
     applyTokenSaver,
     compressFileListings,
@@ -9,7 +9,8 @@ import {
     compressGitStatusOrLog,
     compressGrepOutput,
     PreviewTokenSaver,
-    stripAnsiCodes
+    stripAnsiCodes,
+    trimMessages
 } from "../src/tokenSaver.js";
 
 const DEFAULT_SETTINGS: TokenSaverSettings = {
@@ -31,6 +32,11 @@ const DEFAULT_SETTINGS: TokenSaverSettings = {
         enabled: true,
         mode: "terse",
         stripPleasantries: true
+    },
+    trimMessages: {
+        enabled: true,
+        maxInputTokens: 8192,
+        preserveTailMessages: 4
     }
 };
 
@@ -192,4 +198,88 @@ index 1234567..7654321 100644
     assert.ok(preview.transformedTokensEstimate < preview.originalTokensEstimate);
     assert.ok(preview.tokensSavedEstimate > 0);
     assert.ok(preview.percentageSaved > 0);
+});
+
+test("trimMessages is a no-op when total fits under the threshold", () => {
+    const messages: ChatMessage[] = [
+        { role: "system", content: "You are helpful." },
+        { role: "user", content: "hi" },
+        { role: "assistant", content: "hello" }
+    ];
+
+    const result = trimMessages(messages, { enabled: true, maxInputTokens: 1000, preserveTailMessages: 2 });
+    assert.equal(result.trimmedCount, 0);
+    assert.deepEqual(result.messages, messages);
+});
+
+test("trimMessages drops oldest tool messages until under threshold and preserves tail", () => {
+    const huge = "x".repeat(2000);
+    const messages: ChatMessage[] = [
+        { role: "system", content: "sys" },
+        { role: "user", content: "first" },
+        { role: "tool", tool_call_id: "t1", content: huge },
+        { role: "tool", tool_call_id: "t2", content: huge },
+        { role: "tool", tool_call_id: "t3", content: huge },
+        { role: "tool", tool_call_id: "t4", content: huge },
+        { role: "assistant", content: "ok" },
+        { role: "user", content: "next?" }
+    ];
+
+    const result = trimMessages(messages, { enabled: true, maxInputTokens: 500, preserveTailMessages: 2 });
+
+    assert.ok(result.trimmedCount >= 1);
+    assert.ok(result.trimmedTokens <= 500);
+
+    const trimmedToolMsg = result.messages.find((m) => m.role === "tool" && m.tool_call_id === "t1");
+    assert.ok(trimmedToolMsg);
+    assert.notEqual(String(trimmedToolMsg.content), huge);
+    assert.equal(String(trimmedToolMsg.content), "[trimmed: tool output omitted to fit context window]");
+
+    const lastUser = result.messages[result.messages.length - 1];
+    assert.equal(lastUser?.role, "user");
+    assert.equal(String(lastUser?.content), "next?");
+});
+
+test("trimMessages leaves non-tail tool messages untouched when over budget", () => {
+    const huge = "y".repeat(4000);
+    const messages: ChatMessage[] = [
+        { role: "system", content: "sys" },
+        { role: "user", content: "u" },
+        { role: "tool", tool_call_id: "t1", content: huge },
+        { role: "tool", tool_call_id: "t2", content: huge },
+        { role: "tool", tool_call_id: "t3", content: huge },
+        { role: "assistant", content: "a" }
+    ];
+
+    const result = trimMessages(messages, { enabled: true, maxInputTokens: 500, preserveTailMessages: 2 });
+
+    const lastTool = result.messages.find((m) => m.role === "tool" && m.tool_call_id === "t3");
+    assert.ok(lastTool);
+    assert.equal(String(lastTool.content), huge, "t3 should be inside tail and not trimmed");
+    assert.ok(result.trimmedCount >= 1);
+});
+
+test("applyTokenSaver runs trimMessages after compression", () => {
+    const longDiff = `diff --git a/big.ts b/big.ts\n` + `+line\n`.repeat(500);
+    const messages: ChatMessage[] = [
+        { role: "system", content: "sys" },
+        { role: "user", content: "u" },
+        { role: "tool", tool_call_id: "a", content: longDiff },
+        { role: "tool", tool_call_id: "b", content: longDiff },
+        { role: "tool", tool_call_id: "c", content: longDiff },
+        { role: "assistant", content: "ok" }
+    ];
+
+    const request: ChatCompletionRequest = { model: "openai/gpt-4o", messages };
+    const settings: TokenSaverSettings = {
+        ...DEFAULT_SETTINGS,
+        trimMessages: { enabled: true, maxInputTokens: 200, preserveTailMessages: 2 }
+    };
+
+    const result = applyTokenSaver(request, settings);
+    const totalChars = result.request.messages.reduce(
+        (acc, m) => acc + (typeof m.content === "string" ? m.content.length : 0),
+        0
+    );
+    assert.ok(Math.ceil(totalChars / 4) <= 200);
 });

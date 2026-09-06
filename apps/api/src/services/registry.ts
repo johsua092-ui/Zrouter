@@ -25,6 +25,7 @@ import {
     CodeBuddyExecutor,
     CodexExecutor,
     CommandCodeExecutor,
+    DeepSeekScraperExecutor,
     GoRouterExecutor,
     KiroExecutor,
     OpenCodeZenExecutor,
@@ -276,6 +277,16 @@ export function loadSavedProvidersFromDB(): void {
                         accessToken: p.accessToken,
                         refreshToken: p.refreshToken,
                         providerSpecificData: p.providerSpecificData
+                    })
+                );
+                break;
+            case isProviderBaseId(p.id, "deepseek"):
+                registry.registerProvider(
+                    new DeepSeekScraperExecutor({
+                        id: p.id || p.providerId,
+                        name: p.name,
+                        baseUrl,
+                        token: p.apiKey || p.accessToken
                     })
                 );
                 break;

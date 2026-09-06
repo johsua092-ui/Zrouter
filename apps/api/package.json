@@ -4,12 +4,12 @@
     "type": "module",
     "repository": {
         "type": "git",
-        "url": "https://github.com/seaavey/SRouter.git",
+        "url": "https://github.com/zelapii/Zrouter.git",
         "directory": "apps/api"
     },
-    "homepage": "https://github.com/seaavey/SRouter#readme",
+    "homepage": "https://github.com/zelapii/Zrouter#readme",
     "bugs": {
-        "url": "https://github.com/seaavey/SRouter/issues"
+        "url": "https://github.com/zelapii/Zrouter/issues"
     },
     "license": "MIT",
     "scripts": {
@@ -22,13 +22,13 @@
     "dependencies": {
         "@hono/node-server": "^2.1.0",
         "@hono/zod-validator": "^0.4.3",
-        "@srouter/constants": "workspace:*",
-        "@srouter/db": "workspace:*",
-        "@srouter/executors": "workspace:*",
-        "@srouter/pricing": "workspace:*",
-        "@srouter/providers": "workspace:*",
-        "@srouter/translator": "workspace:*",
-        "@srouter/types": "workspace:*",
+        "@srouter/constants": "*",
+        "@srouter/db": "*",
+        "@srouter/executors": "*",
+        "@srouter/pricing": "*",
+        "@srouter/providers": "*",
+        "@srouter/translator": "*",
+        "@srouter/types": "*",
         "hono": "^4.13.1",
         "zod": "^3.24.2"
     },
@@ -36,6 +36,6 @@
         "@types/node": "^26.1.1",
         "tsup": "^8.5.1",
         "tsx": "^4.23.0",
-        "typescript": "^5.0.0"
+        "typescript": "^5.8.3"
     }
 }

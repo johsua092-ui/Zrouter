@@ -10,7 +10,6 @@ import {
     RotateCcw,
     Server,
     Shield,
-    Terminal,
     ArrowUpCircle
 } from "lucide-react";
 import { toast } from "sonner";
@@ -24,7 +23,6 @@ import { SecuritySettings } from "@/components/settings/SecuritySettings";
 import { GatewaySettings } from "@/components/settings/GatewaySettings";
 import { AppearanceSettings } from "@/components/settings/AppearanceSettings";
 import { LoggingSettings } from "@/components/settings/LoggingSettings";
-import { PlaygroundSettings } from "@/components/settings/PlaygroundSettings";
 import { DataSettings } from "@/components/settings/DataSettings";
 import { SystemSettings } from "@/components/settings/SystemSettings";
 import { SettingsSkeleton } from "@/components/skeletons";
@@ -34,8 +32,7 @@ export const Route = createFileRoute("/settings")({
     component: SettingsPage
 });
 
-type SettingsTab =
-    "security" | "gateway" | "appearance" | "logging" | "playground" | "data" | "system";
+type SettingsTab = "security" | "gateway" | "appearance" | "logging" | "data" | "system";
 
 interface ServerSettingsResponse {
     require_api_key?: boolean;
@@ -52,7 +49,6 @@ function SettingsPage() {
         resetToDefaults,
         exportSettings,
         importSettings,
-        clearPlaygroundHistory,
         getStorageStats
     } = useSettings();
     const { hasUpdate, latestVersion } = useVersion();
@@ -112,7 +108,6 @@ function SettingsPage() {
         { id: "gateway", label: "Gateway & Proxy", icon: Server },
         { id: "appearance", label: "Appearance", icon: Palette },
         { id: "logging", label: "Logging & Privacy", icon: Shield },
-        { id: "playground", label: "Playground Defaults", icon: Terminal },
         { id: "data", label: "Data & Storage", icon: Database },
         { id: "system", label: "System Diagnostics", icon: Cpu, hasBadge: hasUpdate }
     ];
@@ -234,15 +229,10 @@ function SettingsPage() {
                         <LoggingSettings settings={settings} updateSetting={updateSetting} />
                     )}
 
-                    {activeTab === "playground" && (
-                        <PlaygroundSettings settings={settings} updateSetting={updateSetting} />
-                    )}
-
                     {activeTab === "data" && (
                         <DataSettings
                             exportSettings={exportSettings}
                             importSettings={importSettings}
-                            clearPlaygroundHistory={clearPlaygroundHistory}
                             resetToDefaults={resetToDefaults}
                             getStorageStats={getStorageStats}
                         />

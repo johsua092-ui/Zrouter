@@ -1,5 +1,4 @@
 import { useMemo, useState } from "react";
-import { Link } from "@tanstack/react-router";
 import {
     AlertCircle,
     ArrowRight,
@@ -10,7 +9,6 @@ import {
     Eye,
     Layers,
     Pencil,
-    Play,
     Plus,
     Search,
     ShieldAlert,
@@ -435,18 +433,6 @@ export function ComboList({
 
                                         {/* Header Actions */}
                                         <div className="flex items-center gap-2 shrink-0">
-                                            {/* Test in Playground Link */}
-                                            {!isWildcard && (
-                                                <Link
-                                                    to="/playground"
-                                                    search={{ model: group.sourceModel }}
-                                                    className="inline-flex items-center gap-1 rounded-md border border-border/70 bg-secondary/40 hover:bg-secondary px-2.5 py-1 text-[11px] font-semibold text-foreground transition-all cursor-pointer shadow-2xs"
-                                                >
-                                                    <Play className="size-3 text-emerald-500 fill-emerald-500" />
-                                                    <span>Test</span>
-                                                </Link>
-                                            )}
-
                                             {/* Copy cURL button */}
                                             {!isWildcard && (
                                                 <button

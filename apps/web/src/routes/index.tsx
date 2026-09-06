@@ -6,11 +6,8 @@ import {
     Boxes,
     Coins,
     CircleDollarSign,
-    Cpu,
-    Radio,
     RefreshCw,
-    TriangleAlert,
-    Zap
+    TriangleAlert
 } from "lucide-react";
 import { api } from "@/lib/api";
 import { formatCompactNumber } from "@/lib/utils";

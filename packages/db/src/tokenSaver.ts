@@ -20,6 +20,11 @@ export const DEFAULT_TOKEN_SAVER_SETTINGS: TokenSaverSettings = {
         enabled: true,
         mode: "terse",
         stripPleasantries: true
+    },
+    trimMessages: {
+        enabled: true,
+        maxInputTokens: 8192,
+        preserveTailMessages: 4
     }
 };
 
@@ -45,6 +50,10 @@ export function getTokenSaverSettingsDB(): TokenSaverSettings {
             compressLlmOutput: {
                 ...DEFAULT_TOKEN_SAVER_SETTINGS.compressLlmOutput,
                 ...(Parsed.compressLlmOutput ?? {})
+            },
+            trimMessages: {
+                ...DEFAULT_TOKEN_SAVER_SETTINGS.trimMessages,
+                ...(Parsed.trimMessages ?? {})
             }
         };
     } catch {
@@ -67,6 +76,10 @@ export function setTokenSaverSettingsDB(settings: Partial<TokenSaverSettings>): 
         compressLlmOutput: {
             ...Current.compressLlmOutput,
             ...(settings.compressLlmOutput ?? {})
+        },
+        trimMessages: {
+            ...Current.trimMessages,
+            ...(settings.trimMessages ?? {})
         }
     };
     setSettingDB(SETTINGS_KEY, JSON.stringify(Updated));

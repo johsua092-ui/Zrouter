@@ -1,6 +1,7 @@
 import { useState } from "react";
 
 const ICON_MAPPING: Record<string, string> = {
+    // Original providers
     bai: "/icons/providers/bai.svg",
     "b.ai": "/icons/providers/bai.svg",
     openai_codex: "/icons/providers/codex.png",
@@ -16,33 +17,76 @@ const ICON_MAPPING: Record<string, string> = {
     seekai: "/icons/providers/newapi.png",
     tabitoken: "/icons/providers/newapi.png",
     tokenrouter: "/icons/providers/tokenrouter.png",
-    groq: "/icons/providers/groq.png",
-    openrouter: "/icons/providers/openrouter.png",
-    copilot: "/icons/providers/copilot.png",
-    cursor: "/icons/providers/cursor.png",
-    qoder: "/icons/providers/qoder.png",
-    kilocode: "/icons/providers/kilocode.png",
-    kilo: "/icons/providers/kilocode.png",
-    cline: "/icons/providers/cline.png",
-    clinepass: "/icons/providers/clinepass.png",
+    groq: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/groq.png",
+    openrouter: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/openrouter.png",
+    copilot: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/copilot.png",
+    cursor: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/cursor.png",
+    qoder: "/icons/providers/newapi.png",
+    kilocode: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/kilocode.png",
+    kilo: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/kilocode.png",
+    cline: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/cline.png",
     codebuddy: "/icons/providers/codebuddy.png",
     "codebuddy-cn": "/icons/providers/codebuddy-cn.png",
     "codebuddy-intl": "/icons/providers/codebuddy-intl.png",
-    kimi: "/icons/providers/kimi.png",
-    grok: "/icons/providers/grok-web.png",
-    xai: "/icons/providers/xai.png",
-    gemini: "/icons/providers/gemini.png",
-    huggingface: "/icons/providers/huggingface.png",
-    ollama: "/icons/providers/ollama.png",
-    deepseek: "/icons/providers/deepseek.png",
-    mistral: "/icons/providers/mistral.png",
-    cohere: "/icons/providers/cohere.png",
-    replicate: "/icons/providers/replicate.png",
-    together: "/icons/providers/together.png",
-    siliconflow: "/icons/providers/siliconflow.png",
+    kimi: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/kimi.png",
+    moonshot: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/kimi.png",
+    grok: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/grok-web.png",
+    xai: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/xai.png",
+    gemini: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/gemini.png",
+    huggingface: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/huggingface.png",
+    ollama: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/ollama.png",
+    deepseek: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/deepseek.png",
+    mistral: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/mistral.png",
+    cohere: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/cohere.png",
+    together: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/together.png",
+    siliconflow: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/siliconflow.png",
     opencode: "/icons/providers/opencode.png",
     opencode_zen: "/icons/providers/opencode.png",
-    "opencode-zen": "/icons/providers/opencode.png"
+    "opencode-zen": "/icons/providers/opencode.png",
+
+    // Batch 1 - Major API providers
+    cerebras: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/cerebras.png",
+    fireworks: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/fireworks.png",
+    nvidia: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/nvidia.png",
+    sambanova: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/sambanova.png",
+    vertex: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/gemini.png",
+    perplexity: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/perplexity.png",
+    cloudflare: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/cloudflare-ai.png",
+    nebius: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/nebius.png",
+
+    // Batch 2 - Chinese & new providers
+    glm: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/glm.png",
+    zhipu: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/glm.png",
+    minimax: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/minimax.png",
+    chutes: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/chutes.png",
+    hyperbolic: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/hyperbolic.png",
+
+    // Batch 3 - Cloud & self-hosted
+    "ollama-cloud": "https://raw.githubusercontent.com/decolua/9router/master/public/providers/ollama.png",
+    novita: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/novita.png",
+    deepinfra: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/deepinfra.png",
+    featherless: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/featherless.png",
+    gmi: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/gmi-cloud.png",
+    venice: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/venice.png",
+
+    // Batch 4 - Chinese enterprise
+    qianfan: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/qianfan.png",
+    volcengine: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/volcengine.png",
+    byteplus: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/byteplus.png",
+    "tencent-tokenhub": "https://raw.githubusercontent.com/decolua/9router/master/public/providers/tencent.png",
+
+    // Batch 5 - More providers
+    arcee: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/arcee.png",
+
+    // Self-hosted (use llama.cpp icon as fallback)
+    vllm: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/vllm.png",
+    sglang: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/sglang.png",
+    lmstudio: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/lmstudio.png",
+    llamacpp: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/llamacpp.png",
+
+    // Misc
+    kiro: "https://raw.githubusercontent.com/decolua/9router/master/public/providers/kiro.png",
+    commandcode: "/icons/providers/newapi.png"
 };
 
 export function ProviderIcon({

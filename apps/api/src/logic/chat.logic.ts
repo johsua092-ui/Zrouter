@@ -5,6 +5,7 @@ import {
     incrementAPIKeyUsageDB
 } from "@srouter/db";
 import { applyTokenSaver, estimateCostForUsage, extractUsageBreakdown } from "@srouter/translator";
+import { modelSupportsToolCalling } from "@srouter/pricing";
 import type {
     ChatCompletionChunk,
     ChatCompletionRequest,
@@ -37,6 +38,16 @@ interface ErrorWithStatus {
     message?: string;
 }
 
+/**
+ * Strip tools and tool_choice from request body for models that don't support tool calling.
+ */
+function stripToolsFromBody(body: ChatCompletionRequest): ChatCompletionRequest {
+    const stripped = { ...body };
+    delete stripped.tools;
+    delete stripped.tool_choice;
+    return stripped;
+}
+
 function ExtractStatusCode(
     err: Error | ErrorWithStatus | string | null | undefined
 ): number | undefined {
@@ -65,7 +76,7 @@ function ShouldTriggerFallback(
     if (status && rule.triggerOnStatus.includes(status)) return true;
     const msg = typeof err === "string" ? err : err ? err.message || String(err) : "";
     if (
-        /rate\s*limit|too\s+many\s+requests|quota|exhausted|capacity|high\s+traffic|overloaded|no active provider connection|not found|unknown model|invalid model|no provider found|insufficient tokens|insufficient_quota|billing_error/i.test(
+        /rate\s*limit|too\s+many\s+requests|quota|exhausted|capacity|high\s+traffic|overloaded|no active provider connection|not found|unknown model|invalid model|no provider found|insufficient tokens|insufficient_quota|billing_error|tool.?calling.*not supported|not support.*tool|tools.*not.*supported/i.test(
             msg
         )
     ) {
@@ -142,8 +153,9 @@ export class ChatLogic {
         depth = 0,
         apiKeyId?: string
     ): Promise<ChatCompletionResponse> {
+        const maxInputTokens = body.max_tokens ?? 4096; // Extract or default max_tokens
         const effectiveBody =
-            depth === 0 ? applyTokenSaver(body, getTokenSaverSettingsDB()).request : body;
+            depth === 0 ? applyTokenSaver(body, getTokenSaverSettingsDB(), maxInputTokens).request : body;
         const originalModel = effectiveBody.model;
         const candidates = ResolveCandidates(originalModel);
 
@@ -163,8 +175,17 @@ export class ChatLogic {
             }
 
             const currentModel = candidate.model;
-            const currentReq: ChatCompletionRequest = { ...effectiveBody, model: currentModel };
             const providerId = currentModel.split("/")[0] || "default";
+
+            // Proactively strip tools if model doesn't support tool calling
+            let currentReq: ChatCompletionRequest = { ...effectiveBody, model: currentModel };
+            if (
+                currentReq.tools &&
+                currentReq.tools.length > 0 &&
+                !modelSupportsToolCalling(currentModel)
+            ) {
+                currentReq = stripToolsFromBody(currentReq);
+            }
 
             try {
                 await ensureFreshToken(providerId);
@@ -256,8 +277,9 @@ export class ChatLogic {
         depth = 0,
         apiKeyId?: string
     ): AsyncGenerator<ChatCompletionChunk, void, void> {
+        const maxInputTokens = body.max_tokens ?? 4096; // Extract or default max_tokens
         const effectiveBody =
-            depth === 0 ? applyTokenSaver(body, getTokenSaverSettingsDB()).request : body;
+            depth === 0 ? applyTokenSaver(body, getTokenSaverSettingsDB(), maxInputTokens).request : body;
         const originalModel = effectiveBody.model;
         const candidates = ResolveCandidates(originalModel);
 
@@ -277,8 +299,17 @@ export class ChatLogic {
             }
 
             const currentModel = candidate.model;
-            const currentReq: ChatCompletionRequest = { ...effectiveBody, model: currentModel };
             const providerId = currentModel.split("/")[0] || "default";
+
+            // Proactively strip tools if model doesn't support tool calling
+            let currentReq: ChatCompletionRequest = { ...effectiveBody, model: currentModel };
+            if (
+                currentReq.tools &&
+                currentReq.tools.length > 0 &&
+                !modelSupportsToolCalling(currentModel)
+            ) {
+                currentReq = stripToolsFromBody(currentReq);
+            }
 
             let yieldedAny = false;
             let usage: UsageInfo | undefined = undefined;

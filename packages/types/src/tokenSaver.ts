@@ -23,11 +23,18 @@ export interface CompressLlmOutputSettings {
     customPrompt?: string;
 }
 
+export interface TrimMessagesSettings {
+    enabled: boolean;
+    maxInputTokens: number;
+    preserveTailMessages: number;
+}
+
 export interface TokenSaverSettings {
     enabled: boolean;
     compressToolOutput: CompressToolOutputSettings;
     lazySeniorDev: LazySeniorDevSettings;
     compressLlmOutput: CompressLlmOutputSettings;
+    trimMessages: TrimMessagesSettings;
 }
 
 export const CompressToolOutputSchema = z.object({
@@ -53,11 +60,18 @@ export const CompressLlmOutputSchema = z.object({
     customPrompt: z.string().optional()
 });
 
+export const TrimMessagesSchema = z.object({
+    enabled: z.boolean(),
+    maxInputTokens: z.number().int().min(256).default(8192),
+    preserveTailMessages: z.number().int().min(1).max(20).default(4)
+});
+
 export const TokenSaverSettingsSchema = z.object({
     enabled: z.boolean(),
     compressToolOutput: CompressToolOutputSchema,
     lazySeniorDev: LazySeniorDevSchema,
-    compressLlmOutput: CompressLlmOutputSchema
+    compressLlmOutput: CompressLlmOutputSchema,
+    trimMessages: TrimMessagesSchema
 });
 
 export interface TokenSaverPreviewRequest {

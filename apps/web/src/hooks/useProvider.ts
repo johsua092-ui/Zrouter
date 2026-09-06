@@ -86,5 +86,37 @@ export function useProvider(providerId: string) {
         }
     });
 
-    return { ...query, addMutation, deleteMutation, addModelMutation, deleteModelMutation };
+    const fetchModelsQuery = useQuery({
+        queryKey: ["providers", providerId, "fetch-models"],
+        queryFn: () => api.get<{ object: string; data: ModelObject[] }>(
+            `/v1/providers/${providerId}/models/fetch`
+        ),
+        enabled: false
+    });
+
+    const importModelsMutation = useMutation({
+        mutationFn: (models: string[]) =>
+            api.post<{ imported: number; skipped: number; models: ModelObject[]; skipped_ids: string[] }>(
+                `/v1/providers/${providerId}/models/import`,
+                { models }
+            ),
+        onSuccess: (data) => {
+            void queryClient.invalidateQueries({ queryKey: ["providers", providerId] });
+            void queryClient.invalidateQueries({ queryKey: ["models"] });
+            toast.success(`Imported ${data.imported} models` + (data.skipped > 0 ? `, skipped ${data.skipped}` : ""));
+        },
+        onError: (err: Error) => {
+            toast.error(err.message || "Failed to import models");
+        }
+    });
+
+    return {
+        ...query,
+        addMutation,
+        deleteMutation,
+        addModelMutation,
+        deleteModelMutation,
+        fetchModelsQuery,
+        importModelsMutation
+    };
 }
