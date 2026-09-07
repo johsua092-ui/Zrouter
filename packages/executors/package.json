@@ -30,9 +30,9 @@
         "clean": "rm -rf dist"
     },
     "dependencies": {
-        "@srouter/constants": "*",
-        "@srouter/translator": "*",
-        "@srouter/types": "*"
+        "@srouter/constants": "workspace:*",
+        "@srouter/translator": "workspace:*",
+        "@srouter/types": "workspace:*"
     },
     "devDependencies": {
         "@types/node": "^26.1.1",

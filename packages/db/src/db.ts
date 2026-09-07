@@ -19,6 +19,11 @@ function getDatabasePath(): string {
     // Allow explicit override via DATABASE_PATH environment variable
     if (process.env.DATABASE_PATH) return process.env.DATABASE_PATH;
 
+    // Automatic persistence support for Railway Volumes
+    if (process.env.RAILWAY_VOLUME_MOUNT_PATH) {
+        return path.join(process.env.RAILWAY_VOLUME_MOUNT_PATH, "srouter.db");
+    }
+
     // Fallback for legacy installations (keep existing for backward compatibility)
     for (const legacyPath of LEGACY_DB_LOCATIONS) {
         if (fs.existsSync(legacyPath)) return legacyPath;

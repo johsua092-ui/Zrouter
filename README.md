@@ -42,6 +42,15 @@ docker run -d --name zelai --restart unless-stopped \
   ghcr.io/zelapii/zrouter:latest
 ```
 
+### Railway
+
+[![Deploy on Railway](https://railway.app/button.svg)](https://railway.app/new/template?template=https%3A%2F%2Fgithub.com%2Fjohsua092-ui%2FZrouter)
+
+1. Connect your repository to **[Railway](https://railway.app/)**.
+2. Railway detects `railway.json` and builds via the multi-stage `Dockerfile` with Node.js 22.
+3. *(Recommended)* Add a **Persistent Volume** mounted to `/data` so SQLite database and credentials persist across deploys.
+4. Healthchecks are automatically pointed to `/health`.
+
 ---
 
 ## DeepSeek Gateway

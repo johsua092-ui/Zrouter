@@ -25,7 +25,7 @@
         "clean": "rm -rf dist"
     },
     "dependencies": {
-        "@srouter/types": "*"
+        "@srouter/types": "workspace:*"
     },
     "devDependencies": {
         "typescript": "^5.8.3"

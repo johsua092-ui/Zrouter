@@ -26,9 +26,9 @@
         "test": "tsx --test tests/**/*.test.ts"
     },
     "dependencies": {
-        "@srouter/constants": "*",
-        "@srouter/pricing": "*",
-        "@srouter/types": "*"
+        "@srouter/constants": "workspace:*",
+        "@srouter/pricing": "workspace:*",
+        "@srouter/types": "workspace:*"
     },
     "devDependencies": {
         "@types/node": "^26.1.1",

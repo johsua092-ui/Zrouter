@@ -26,8 +26,8 @@
         "clean": "rm -rf dist"
     },
     "dependencies": {
-        "@srouter/constants": "*",
-        "@srouter/types": "*"
+        "@srouter/constants": "workspace:*",
+        "@srouter/types": "workspace:*"
     },
     "devDependencies": {
         "@types/node": "^26.1.1",

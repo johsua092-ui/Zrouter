@@ -27,7 +27,7 @@
         "update": "tsx scripts/update.ts"
     },
     "dependencies": {
-        "@srouter/types": "*"
+        "@srouter/types": "workspace:*"
     },
     "devDependencies": {
         "@types/node": "^26.4.0",
