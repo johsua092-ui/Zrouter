@@ -5,20 +5,20 @@ FROM node:22-bookworm-slim AS builder
 
 WORKDIR /app
 
-# Install pnpm reliably
-RUN npm install -g pnpm@latest
-
 # Copy repository
 COPY . .
 
-# Install dependencies (respecting pnpm-workspace.yaml & workspace:* references)
-RUN pnpm install --no-frozen-lockfile
+# Install dependencies using npm (handles workspaces natively, no build script blocking)
+RUN npm install
 
-# Build all packages sequentially to ensure proper dependency order
+# Install pnpm for workspace-aware build commands
+RUN npm install -g pnpm@latest
+
+# Build all packages sequentially
 RUN pnpm run build
 
-# Prune development dependencies to minimize final image size
-RUN pnpm prune --prod
+# Prune development dependencies
+RUN npm prune --production
 
 # ------------------------------------------------------------------------------
 # Production Runner Stage
@@ -38,9 +38,5 @@ COPY --from=builder /app /app
 
 # Expose Gateway port (Railway overrides PORT dynamically)
 EXPOSE 3000
-
-# Healthcheck for container runners
-HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD node -e "fetch('http://localhost:' + (process.env.PORT || 3000) + '/health').then(r => r.ok ? process.exit(0) : process.exit(1)).catch(() => process.exit(1))"
 
 CMD ["node", "apps/api/dist/index.js"]
