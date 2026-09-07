@@ -32,7 +32,8 @@
     "dependencies": {
         "@srouter/constants": "workspace:*",
         "@srouter/translator": "workspace:*",
-        "@srouter/types": "workspace:*"
+        "@srouter/types": "workspace:*",
+        "@srouter/pricing": "workspace:*"
     },
     "devDependencies": {
         "@types/node": "^26.1.1",
