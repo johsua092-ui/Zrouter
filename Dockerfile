@@ -2,7 +2,8 @@ FROM node:22-bookworm-slim AS builder
 WORKDIR /app
 RUN npm install -g pnpm@latest
 COPY . .
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm approve-builds --all || true
+RUN pnpm install --no-frozen-lockfile --ignore-scripts
 RUN pnpm run build
 RUN pnpm prune --prod
 
