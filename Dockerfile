@@ -2,11 +2,9 @@ FROM node:22-bookworm-slim AS builder
 WORKDIR /app
 RUN npm install -g pnpm@latest
 COPY . .
-RUN pnpm install --no-frozen-lockfile --ignore-scripts
-RUN node node_modules/esbuild/install.js || true
+RUN pnpm install --no-frozen-lockfile
 RUN pnpm run build
 RUN pnpm prune --prod
-RUN node node_modules/esbuild/install.js || true
 
 FROM node:22-bookworm-slim AS runner
 WORKDIR /app
