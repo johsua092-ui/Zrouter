@@ -33,12 +33,12 @@
     ],
     "scripts": {
         "dev": "concurrently -n api,web -c blue,green \"npm run dev:api\" \"npm run dev:web\"",
-        "dev:api": "npm run dev -w apps/api",
-        "dev:web": "npm run dev -w apps/web",
-        "start": "npm run start -w apps/api",
-        "build": "npm run build -w packages/types && npm run build -w packages/pricing && npm run build -w packages/constants && npm run build -w packages/translator && npm run build -w packages/db && npm run build -w packages/executors && npm run build -w packages/providers && npm run build -w apps/web && npm run build -w apps/api",
-        "build:api": "npm run build -w apps/api",
-        "build:web": "npm run build -w apps/web",
+        "dev:api": "pnpm --filter api dev",
+        "dev:web": "pnpm --filter web dev",
+        "start": "node apps/api/dist/index.js",
+        "build": "pnpm --filter @srouter/types build && pnpm --filter @srouter/pricing build && pnpm --filter @srouter/constants build && pnpm --filter @srouter/translator build && pnpm --filter @srouter/db build && pnpm --filter @srouter/executors build && pnpm --filter @srouter/providers build && pnpm --filter web build && pnpm --filter api build",
+        "build:api": "pnpm --filter api build",
+        "build:web": "pnpm --filter web build",
         "clean": "rm -rf apps/*/dist packages/*/dist",
         "format": "prettier --write .",
         "format:check": "prettier --check ."
